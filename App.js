@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  AsyncStorage,
+  Alert
 } from "react-native";
 import { theme } from "./colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Fontisto } from '@expo/vector-icons';
 
-const STORAGE_KEY = "@toDos"
+const STORAGE_KEY = "@toDos";
 
 export default function App() {
   const [working, setWorking] = useState(true);
@@ -19,37 +21,54 @@ export default function App() {
   const [toDos, setToDos] = useState({});
   useEffect(() => {
     loadToDos();
-  }, [])
+  }, []);
 
   const travel = () => setWorking(false);
   const work = () => setWorking(true);
   const onChangeText = (payload) => setText(payload);
-  const saveToDos = async(toSave) => {
-    try{
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));  
-    }catch(e){
+  const saveToDos = async (toSave) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch (e) {
       throw e;
     }
-  }
-  const loadToDos = async() => {
+  };
+  const loadToDos = async () => {
     const s = await AsyncStorage.getItem(STORAGE_KEY);
     setToDos(JSON.parse(s));
-  }
-  const addToDo = async() => {
+  };
+  const addToDo = async () => {
     if (text === "") {
       return;
     }
+
     // save to do
     /* const newToDos = Object.assign({}, toDos, {
       [Date.now()]: { text, work: working },
     }); */
     const newToDos = { ...toDos, [Date.now()]: { text, working } };
     // 이전 object를 가진 새로운 object 생성
+
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
   };
-  console.log(toDos);
+  const deleteToDo = (key) => {
+    Alert.alert("Delete To Do", "Are you sure?", [
+      { text: "Cancel" },
+      {
+        text: "I'm Sure",
+        style: "destructive",
+        onPress: () => {
+          const newToDos = { ...toDos };
+          delete newToDos[key];
+          setToDos(newToDos);
+          saveToDos(newToDos);
+        },
+      },
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -86,7 +105,9 @@ export default function App() {
           toDos[key].working === working ? (
             <View style={styles.toDo} key={key}>
               <Text style={styles.toDoText}>{toDos[key].text}</Text>
-              <Text>❌</Text>
+              <TouchableOpacity onPress={() => deleteToDo(key)}>
+                <Text><Fontisto name="trash" size={18} color= {theme.grey} /></Text>
+              </TouchableOpacity>
             </View>
           ) : null
         )}
@@ -109,7 +130,6 @@ const styles = StyleSheet.create({
   btnText: {
     fontSize: 38,
     fontWeight: "600",
-    color: "white",
   },
   input: {
     backgroundColor: "white",
@@ -120,18 +140,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   toDo: {
-    backgroundColor: theme.grey,
+    backgroundColor: theme.toDoBg,
     marginBottom: 10,
     paddingVertical: 20,
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
     borderRadius: 15,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   toDoText: {
     color: "white",
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 });
